@@ -1,3 +1,5 @@
+package view;
+
 import controller.KontakController; 
 import java.io.*; 
 import model.Kontak; 
@@ -7,30 +9,97 @@ import javax.swing.table.DefaultTableModel;
 import java.sql.SQLException; 
 import java.util.List; 
 import java.util.logging.Level; 
-import java.util.logging.Logger;
-
-package view;
+import java.util.logging.Logger; 
 
 /**
  *
  * @author USER
  */
 public class PengelolaanKontakFrame extends javax.swing.JFrame {
-
-    private final DefaultTableModel model; 
-    private final KontakController controller;
+    
+    private DefaultTableModel model; 
+    private KontakController controller; 
     /**
      * Creates new form PengelolaanKontakFrame
      */
     public PengelolaanKontakFrame() {
         initComponents();
+        
         controller = new KontakController(); 
-        model = new DefaultTableModel(new String[] 
-        {"No", "Nama", "Nomor Telepon", "Kategori"}, 0); 
+        model = new DefaultTableModel(new String[]           
+                {"No", "Nama", "Nomor Telepon", "Kategori"}, 0); 
         tblKontak.setModel(model); 
-        loadContacts();
-        }
+        loadContacts(); 
+    }
+     
+    private void loadContacts() { 
+        try { 
+            model.setRowCount(0); 
+            List<Kontak> contacts = controller.getAllContacts(); 
 
+            int rowNumber = 1; 
+            for (Kontak contact : contacts) { 
+                model.addRow(new Object[]{ 
+                        rowNumber++, 
+                        contact.getNama(), 
+                        contact.getNomorTelepon(), 
+                        contact.getKategori() 
+                }); 
+            } 
+        } catch (SQLException e) { 
+            showError(e.getMessage()); 
+        } 
+    } 
+
+    private void showError(String message) { 
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE); 
+    } 
+    
+    private void addContact() {       
+        String nama = txtNama.getText().trim(); 
+        String nomorTelepon = txtNomorTelepon.getText().trim(); 
+        String kategori = (String) cmbKategori.getSelectedItem(); 
+        if (!validatePhoneNumber(nomorTelepon)) {    
+            return; // Validasi nomor telepon gagal 
+        } 
+        try {  
+            if (controller.isDuplicatePhoneNumber(nomorTelepon, null)) { 
+            JOptionPane.showMessageDialog(this, "Kontak nomor telepon ini sudah ada.", "Kesalahan", JOptionPane.WARNING_MESSAGE);
+            return; 
+        } 
+ 
+        controller.addContact(nama, nomorTelepon, kategori); 
+        loadContacts(); 
+        JOptionPane.showMessageDialog(this, "Kontak berhasil ditambahkan!"); 
+        clearInputFields(); 
+        } catch (SQLException ex) { 
+            showError("Gagal menambahkan kontak: " + ex.getMessage()); 
+        } 
+    }
+    
+    private boolean validatePhoneNumber(String phoneNumber) { 
+        if (phoneNumber == null || phoneNumber.isEmpty()) { 
+            JOptionPane.showMessageDialog(this, "Nomor telepon tidak boleh kosong."); 
+            return false; 
+        } 
+        if (!phoneNumber.matches("\\d+")) { // Hanya angka 
+            JOptionPane.showMessageDialog(this, "Nomor telepon hanya boleh berisi angka."); 
+            return false; 
+        } 
+        if (phoneNumber.length() < 8 || phoneNumber.length() > 15) { // Panjang 8-15 
+            JOptionPane.showMessageDialog(this, "Nomor telepon harus memiliki panjang antara 8 hingga 15 karakter."); 
+            return false; 
+        } 
+        return true; 
+    }
+
+    
+    private void clearInputFields() { 
+        txtNama.setText(""); 
+        txtNomorTelepon.setText(""); 
+        cmbKategori.setSelectedIndex(0); 
+    } 
+        
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -82,6 +151,11 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
         btnEdit.setText("Edit");
 
         btnTambah.setText("Tambah");
+        btnTambah.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnTambahActionPerformed(evt);
+            }
+        });
 
         tblKontak.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -176,6 +250,10 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahActionPerformed
+        addContact(); 
+    }//GEN-LAST:event_btnTambahActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -232,3 +310,4 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
     private javax.swing.JTextField txtPencarian;
     // End of variables declaration//GEN-END:variables
 }
+
